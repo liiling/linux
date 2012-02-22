@@ -325,6 +325,24 @@ config READABLE_ASM
 	  to keep kernel developers who have to stare a lot at assembler listings
 	  sane.
 
+config METRICFS
+	bool "Metricfs for sysmon"
+	depends on DEBUG_FS
+	help
+	  metricfs is a library for creating rigidly-formatted files in debugfs
+	  which can be automatically monitored by user-space telemetry.  The
+	  hierarchy is rooted at /sys/kernel/debug/metricfs, and each metric
+	  contains metadata about the metric and types involved, as well as a
+	  tabular values file with the metrics themselves.
+
+config METRICFS_EXAMPLES
+	tristate "Metricfs examples"
+	depends on METRICFS
+	help
+	  example tests and metrics for metricfs.  With this, a set of metrics
+	  appear under "examples", covering various corner cases of the metricfs
+	  interface.  These can be used to test the metricfs functionality.
+
 config HEADERS_INSTALL
 	bool "Install uapi headers to usr/include"
 	depends on !UML
