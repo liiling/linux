@@ -35,6 +35,10 @@
 #define TRACEFS_MAGIC          0x74726163
 #endif
 
+#ifndef STATSFS_MAGIC
+#define STATSFS_MAGIC          0x73746174
+#endif
+
 #ifndef HUGETLBFS_MAGIC
 #define HUGETLBFS_MAGIC        0x958458f6
 #endif
@@ -76,6 +80,16 @@ static const char * const tracefs__known_mountpoints[] = {
 	0,
 };
 
+#ifndef STATSFS_DEFAULT_PATH
+#define STATSFS_DEFAULT_PATH "/sys/kernel/statsfs"
+#endif
+
+static const char * const statsfs__known_mountpoints[] = {
+	STATSFS_DEFAULT_PATH,
+	"/statsfs",
+	0,
+};
+
 static const char * const hugetlbfs__known_mountpoints[] = {
 	0,
 };
@@ -100,6 +114,7 @@ enum {
 	FS__TRACEFS = 3,
 	FS__HUGETLBFS = 4,
 	FS__BPF_FS = 5,
+	FS__STATSFS = 6,
 };
 
 #ifndef TRACEFS_MAGIC
@@ -126,6 +141,11 @@ static struct fs fs__entries[] = {
 		.name	= "tracefs",
 		.mounts	= tracefs__known_mountpoints,
 		.magic	= TRACEFS_MAGIC,
+	},
+	[FS__STATSFS] = {
+		.name	= "statsfs",
+		.mounts	= statsfs__known_mountpoints,
+		.magic	= STATSFS_MAGIC,
 	},
 	[FS__HUGETLBFS] = {
 		.name	= "hugetlbfs",
@@ -297,6 +317,7 @@ FS(sysfs,   FS__SYSFS);
 FS(procfs,  FS__PROCFS);
 FS(debugfs, FS__DEBUGFS);
 FS(tracefs, FS__TRACEFS);
+FS(statsfs, FS__STATSFS);
 FS(hugetlbfs, FS__HUGETLBFS);
 FS(bpf_fs, FS__BPF_FS);
 
