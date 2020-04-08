@@ -334,4 +334,10 @@ config STATS_FS
 	  stats_fs is a virtual file system that provides counters and
 	  other statistics about the running kernel.
 
+config STATS_FS_TEST
+	bool "Tests for stats_fs"
+	depends on STATS_FS && KUNIT
+	help
+	  tests for the stats_fs API.
+
 endmenu
