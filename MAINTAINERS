@@ -5229,6 +5229,13 @@ F:	include/linux/debugfs.h
 F:	include/linux/kobj*
 F:	lib/kobj*
 
+STATS_FS
+M:	Paolo Bonzini <pbonzini@redhat.com>
+R:	Emanuele Giuseppe Esposito <e.emanuelegiuseppe@gmail.com>
+S:	Supported
+F:	include/linux/stats_fs.h
+F:	fs/stats_fs
+
 DRIVERS FOR ADAPTIVE VOLTAGE SCALING (AVS)
 M:	Kevin Hilman <khilman@kernel.org>
 M:	Nishanth Menon <nm@ti.com>
