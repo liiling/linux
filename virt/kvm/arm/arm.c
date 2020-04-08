@@ -140,7 +140,7 @@ out_fail_alloc:
 	return ret;
 }
 
-int kvm_arch_create_vcpu_debugfs(struct kvm_vcpu *vcpu)
+int kvm_arch_create_vcpu_stats_fs(struct kvm_vcpu *vcpu)
 {
 	return 0;
 }

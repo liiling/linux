@@ -25,6 +25,7 @@ config KVM
 	# for TASKSTATS/TASK_DELAY_ACCT:
 	depends on NET && MULTIUSER
 	depends on X86_LOCAL_APIC
+	imply STATS_FS
 	select PREEMPT_NOTIFIERS
 	select MMU_NOTIFIER
 	select HAVE_KVM_IRQCHIP

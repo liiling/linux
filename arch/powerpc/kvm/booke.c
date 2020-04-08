@@ -35,7 +35,12 @@
 
 unsigned long kvmppc_booke_handlers;
 
-struct kvm_stats_debugfs_item debugfs_entries[] = {
+struct stats_fs_value stats_fs_vm_entries[] = {
+	VM_STAT("remote_tlb_flush", remote_tlb_flush),
+	{ NULL }
+};
+
+struct stats_fs_value stats_fs_vcpu_entries[] = {
 	VCPU_STAT("mmio", mmio_exits),
 	VCPU_STAT("sig", signal_exits),
 	VCPU_STAT("itlb_r", itlb_real_miss_exits),
@@ -54,7 +59,6 @@ struct kvm_stats_debugfs_item debugfs_entries[] = {
 	VCPU_STAT("halt_wakeup", halt_wakeup),
 	VCPU_STAT("doorbell", dbell_exits),
 	VCPU_STAT("guest doorbell", gdbell_exits),
-	VM_STAT("remote_tlb_flush", remote_tlb_flush),
 	{ NULL }
 };
 

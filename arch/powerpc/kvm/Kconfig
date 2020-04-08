@@ -19,6 +19,7 @@ if VIRTUALIZATION
 
 config KVM
 	bool
+	imply STATS_FS
 	select PREEMPT_NOTIFIERS
 	select HAVE_KVM_EVENTFD
 	select HAVE_KVM_VCPU_ASYNC_IOCTL

@@ -57,7 +57,16 @@
 #define VCPU_IRQS_MAX_BUF (sizeof(struct kvm_s390_irq) * \
 			   (KVM_MAX_VCPUS + LOCAL_IRQS))
 
-struct kvm_stats_debugfs_item debugfs_entries[] = {
+struct stats_fs_value stats_fs_vm_entries[] = {
+	VM_STAT("inject_float_mchk", inject_float_mchk),
+	VM_STAT("inject_io", inject_io),
+	VM_STAT("inject_pfault_done", inject_pfault_done),
+	VM_STAT("inject_service_signal", inject_service_signal),
+	VM_STAT("inject_virtio", inject_virtio),
+	{ NULL }
+};
+
+struct stats_fs_value stats_fs_vcpu_entries[] = {
 	VCPU_STAT("userspace_handled", exit_userspace),
 	VCPU_STAT("exit_null", exit_null),
 	VCPU_STAT("exit_validity", exit_validity),
@@ -95,18 +104,13 @@ struct kvm_stats_debugfs_item debugfs_entries[] = {
 	VCPU_STAT("inject_ckc", inject_ckc),
 	VCPU_STAT("inject_cputm", inject_cputm),
 	VCPU_STAT("inject_external_call", inject_external_call),
-	VM_STAT("inject_float_mchk", inject_float_mchk),
 	VCPU_STAT("inject_emergency_signal", inject_emergency_signal),
-	VM_STAT("inject_io", inject_io),
 	VCPU_STAT("inject_mchk", inject_mchk),
-	VM_STAT("inject_pfault_done", inject_pfault_done),
 	VCPU_STAT("inject_program", inject_program),
 	VCPU_STAT("inject_restart", inject_restart),
-	VM_STAT("inject_service_signal", inject_service_signal),
 	VCPU_STAT("inject_set_prefix", inject_set_prefix),
 	VCPU_STAT("inject_stop_signal", inject_stop_signal),
 	VCPU_STAT("inject_pfault_init", inject_pfault_init),
-	VM_STAT("inject_virtio", inject_virtio),
 	VCPU_STAT("instruction_epsw", instruction_epsw),
 	VCPU_STAT("instruction_gs", instruction_gs),
 	VCPU_STAT("instruction_io_other", instruction_io_other),

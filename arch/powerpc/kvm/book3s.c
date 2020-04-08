@@ -38,7 +38,7 @@
 
 /* #define EXIT_DEBUG */
 
-struct kvm_stats_debugfs_item debugfs_entries[] = {
+struct stats_fs_value stats_fs_vcpu_entries[] = {
 	VCPU_STAT("exits", sum_exits),
 	VCPU_STAT("mmio", mmio_exits),
 	VCPU_STAT("sig", signal_exits),
@@ -66,6 +66,10 @@ struct kvm_stats_debugfs_item debugfs_entries[] = {
 	VCPU_STAT("pthru_all", pthru_all),
 	VCPU_STAT("pthru_host", pthru_host),
 	VCPU_STAT("pthru_bad_aff", pthru_bad_aff),
+	{ NULL }
+};
+
+struct stats_fs_value stats_fs_vm_entries[] = {
 	VM_STAT("largepages_2M", num_2M_pages, .mode = 0444),
 	VM_STAT("largepages_1G", num_1G_pages, .mode = 0444),
 	{ NULL }
