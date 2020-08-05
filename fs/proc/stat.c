@@ -13,6 +13,7 @@
 #include <linux/irqnr.h>
 #include <linux/sched/cputime.h>
 #include <linux/tick.h>
+#include <linux/metricfs.h>
 
 #ifndef arch_irq_stat_cpu
 #define arch_irq_stat_cpu(cpu) 0
@@ -237,3 +238,59 @@ static int __init proc_stat_init(void)
 	return 0;
 }
 fs_initcall(proc_stat_init);
+
+#ifdef CONFIG_METRICFS
+#define METRICFS_ITEM(name, field, desc) \
+static void \
+metricfs_##name(struct metric_emitter *e, int cpu) \
+{ \
+	int64_t v = kcpustat_field(&kcpustat_cpu(cpu), field, cpu); \
+	METRIC_EMIT_PERCPU_INT(e, cpu, v); \
+} \
+METRIC_EXPORT_PERCPU_COUNTER(name, desc, metricfs_##name)
+
+#define METRICFS_FUNC_ITEM(name, func, desc) \
+static void \
+metricfs_##name(struct metric_emitter *e, int cpu) \
+{ \
+	struct kernel_cpustat cpustat; \
+	int64_t v; \
+	kcpustat_cpu_fetch(&cpustat, cpu); \
+	v = func(&cpustat, cpu); \
+	METRIC_EMIT_PERCPU_INT(e, cpu, v); \
+} \
+METRIC_EXPORT_PERCPU_COUNTER(name, desc, metricfs_##name)
+
+METRICFS_ITEM(user, CPUTIME_USER, "time in user mode (nsec)");
+METRICFS_ITEM(nice, CPUTIME_NICE, "time in user mode niced (nsec)");
+METRICFS_ITEM(system, CPUTIME_SYSTEM, "time in system calls (nsec)");
+METRICFS_ITEM(irq, CPUTIME_IRQ, "time in interrupts (nsec)");
+METRICFS_ITEM(softirq, CPUTIME_SOFTIRQ, "time in softirqs (nsec)");
+METRICFS_ITEM(steal, CPUTIME_STEAL, "time in involuntary wait (nsec)");
+METRICFS_ITEM(guest, CPUTIME_GUEST, "time in guest mode (nsec)");
+METRICFS_ITEM(guest_nice, CPUTIME_GUEST_NICE,
+	"time in guest mode niced (nsec)");
+METRICFS_FUNC_ITEM(idle, get_idle_time, "time in idle (nsec)");
+METRICFS_FUNC_ITEM(iowait, get_iowait_time, "time in iowait (nsec)");
+
+static int __init init_stat_metricfs(void)
+{
+	struct metricfs_subsys *subsys;
+
+	subsys = metricfs_create_subsys("stat", NULL);
+	metric_init_user(subsys);
+	metric_init_nice(subsys);
+	metric_init_system(subsys);
+	metric_init_irq(subsys);
+	metric_init_softirq(subsys);
+	metric_init_steal(subsys);
+	metric_init_guest(subsys);
+	metric_init_guest_nice(subsys);
+	metric_init_idle(subsys);
+	metric_init_iowait(subsys);
+
+	return 0;
+}
+module_init(init_stat_metricfs);
+
+#endif
