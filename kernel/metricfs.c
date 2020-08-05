@@ -76,6 +76,8 @@ struct metric {
 	bool is_string;
 	bool is_cumulative;
 	bool has_parm;
+	bool is_percpu;
+	void (*percpu_fn)(struct metric_emitter *e, int cpu);
 
 	/* dentry for the directory that contains the metric */
 	struct dentry *dentry;
@@ -285,6 +287,19 @@ void metric_emit_str_value(struct metric_emitter *e, const char *v,
 }
 EXPORT_SYMBOL(metric_emit_str_value);
 
+void metric_emit_percpu_int_value(struct metric_emitter *e, int cpu, int64_t v)
+{
+	char *ckpt = e->buf;
+	bool ok = true;
+
+	ok &= emit_int(e, cpu);
+	ok &= emit_string(e, " ");
+	ok &= emit_int(e, v);
+	ok &= emit_string(e, "\n");
+	if (!ok)
+		e->buf = ckpt;
+}
+
 /* Contains file data generated at open() */
 struct metricfs_file_private {
 	size_t bytes_written;
@@ -400,11 +415,15 @@ static int metricfs_fields_open(struct inode *inode, struct file *filp)
 	}
 	ok &= emit_string(&e, "value\n");
 
-	if (m->fname0)
-		ok &= emit_string(&e, "str ");
-	if (m->fname1)
-		ok &= emit_string(&e, "str ");
-	ok &= emit_string(&e, (m->is_string) ? "str\n" : "int\n");
+	if (m->is_percpu) {
+		ok &= emit_string(&e, "int int\n");
+	} else {
+		if (m->fname0)
+			ok &= emit_string(&e, "str ");
+		if (m->fname1)
+			ok &= emit_string(&e, "str ");
+		ok &= emit_string(&e, (m->is_string) ? "str\n" : "int\n");
+	}
 
 	/* Emit all or nothing. */
 	if (ok) {
@@ -639,6 +658,35 @@ done:
 	return m;
 }
 EXPORT_SYMBOL(metric_register);
+
+static void metric_emit_percpu(struct metric_emitter *e)
+{
+	int cpu;
+
+	for_each_possible_cpu(cpu)
+		e->metric->percpu_fn(e, cpu);
+}
+
+struct metric *metric_register_percpu(const char *name,
+				struct metricfs_subsys *parent,
+				const char *description,
+				void (*fn)(struct metric_emitter *e, int cpu),
+				bool is_cumulative,
+				struct module *owner)
+{
+	struct metric *metric =
+		metric_register(name, parent, description,
+				"cpu", NULL,
+				metric_emit_percpu,
+				false,
+				is_cumulative, owner);
+	if (metric) {
+		metric->is_percpu = true;
+		metric->percpu_fn = fn;
+	}
+	return metric;
+}
+EXPORT_SYMBOL(metric_register_percpu);
 
 struct metric *metric_register_parm(const char *name,
 				    struct metricfs_subsys *parent,

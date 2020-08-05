@@ -22,6 +22,19 @@ void metric_exit_##name(void) \
 	metric_unregister(metric_##name); \
 }
 
+#define METRIC_EXPORT_PERCPU(name, desc, fn, cumulative) \
+static struct metric *metric_##name; \
+void metric_init_##name(struct metricfs_subsys *parent) \
+{ \
+	metric_##name = metric_register_percpu(__stringify(name), (parent), \
+					(desc), (fn), \
+					(cumulative), THIS_MODULE); \
+} \
+void metric_exit_##name(void) \
+{ \
+	metric_unregister(metric_##name); \
+}
+
 /*
  * Metricfs only deals with two types: int64_t and const char*.
  *
@@ -47,6 +60,11 @@ void metric_exit_##name(void) \
 	METRIC_EXPORT_GENERIC(name, (desc), (fname0), (fname1), (fn), \
 				true, false)
 
+#define METRIC_EXPORT_PERCPU_INT(name, desc, fn) \
+	METRIC_EXPORT_PERCPU(name, (desc), (fn), false)
+#define METRIC_EXPORT_PERCPU_COUNTER(name, desc, fn) \
+	METRIC_EXPORT_PERCPU(name, (desc), (fn), true)
+
 /* Subsystem support. */
 /* Pass NULL as 'parent' to create a new top-level subsystem. */
 struct metricfs_subsys *metricfs_create_subsys(const char *name,
@@ -69,6 +87,8 @@ struct metric_emitter;
 	metric_emit_int_value((e), (v), (f0), (f1))
 #define METRIC_EMIT_STR(e, v, f0, f1) \
 	metric_emit_str_value((e), (v), (f0), (f1))
+#define METRIC_EMIT_PERCPU_INT(e, cpu, v) \
+	metric_emit_percpu_int_value((e), (cpu), (v))
 
 /* Users don't have to call any functions below;
  * use the macro definitions above instead.
@@ -77,6 +97,7 @@ void metric_emit_int_value(struct metric_emitter *e,
 			   int64_t v, const char *f0, const char *f1);
 void metric_emit_str_value(struct metric_emitter *e,
 			   const char *v, const char *f0, const char *f1);
+void metric_emit_percpu_int_value(struct metric_emitter *e, int cpu, int64_t v);
 
 struct metric *metric_register(const char *name,
 			       struct metricfs_subsys *parent,
@@ -97,6 +118,13 @@ struct metric *metric_register_parm(const char *name,
 				    bool is_string,
 				    bool is_cumulative,
 				    struct module *owner);
+
+struct metric *metric_register_percpu(const char *name,
+			       struct metricfs_subsys *parent,
+			       const char *description,
+			       void (*fn)(struct metric_emitter *e, int cpu),
+			       bool is_cumulative,
+			       struct module *owner);
 
 void metric_unregister(struct metric *m);
 
