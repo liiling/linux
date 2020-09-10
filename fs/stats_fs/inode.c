@@ -248,10 +248,38 @@ struct dentry *stats_fs_create_file(struct stats_fs_value *val, struct stats_fs_
 	if (IS_ERR(dentry))
 		return dentry;
 
-	inode->i_fop = &stats_fs_ops;
+	inode->i_fop = &stats_fs_attr_ops;
 
 	return simplefs_finish_dentry(dentry, inode);
 }
+
+struct dentry *stats_fs_create_schema(stuct stats_fs_schema *schema, struct stats_fs_source *src) {
+	struct dentry *dentry;
+	struct inode *inode;
+	struct stats_fs_schema_inode *schema_inode;
+
+	schema_inode = kzalloc(sizeof(struct stats_fs_schema_inode), GFP_KERNEL);
+	if (!schema_inode) {
+		printk(KERN_ERR
+			"Kzalloc failure in stats_fs_create_schema (ENOMEM)\n");
+		return ERR_PTR(-ENOMEM);
+	}
+
+	schema_inode->src = src;
+	schema_inode->schema = schema;
+	int schema_mode = 0644;
+
+	dentry = simplefs_create_file(&stats_fs, &stats_fs_fs_type,
+				      ".schema", schema_mode,
+					  src->source_dentry, schema_inode, &inode);
+	if (IS_ERR(dentry))
+		return dentry;
+
+	inode->i_fop = &stats_fs_schema_ops;
+
+	return simplefs_finish_dentry(dentry, inode);
+}
+
 /**
  * stats_fs_create_dir - create a directory in the stats_fs filesystem
  * @name: a pointer to a string containing the name of the directory to

@@ -36,6 +36,10 @@ enum stat_aggr {
 	STATS_FS_AVG,
 };
 
+struct stats_fs_schema {
+	int place_holder;
+}
+
 struct stats_fs_value {
 	/* Name of the stat */
 	char *name;
