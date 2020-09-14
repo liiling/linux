@@ -253,25 +253,23 @@ struct dentry *stats_fs_create_file(struct stats_fs_value *val, struct stats_fs_
 	return simplefs_finish_dentry(dentry, inode);
 }
 
-struct dentry *stats_fs_create_schema(stuct stats_fs_schema *schema, struct stats_fs_source *src) {
+struct dentry *stats_fs_create_schema( struct stats_fs_source *src) {
 	struct dentry *dentry;
 	struct inode *inode;
-	struct stats_fs_schema_inode *schema_inode;
+	struct stats_fs_schema *schema;
 
-	schema_inode = kzalloc(sizeof(struct stats_fs_schema_inode), GFP_KERNEL);
-	if (!schema_inode) {
+	schema = kzalloc(sizeof(struct stats_fs_schema), GFP_KERNEL);
+	if (!schema) {
 		printk(KERN_ERR
 			"Kzalloc failure in stats_fs_create_schema (ENOMEM)\n");
 		return ERR_PTR(-ENOMEM);
 	}
 
-	schema_inode->src = src;
-	schema_inode->schema = schema;
-	int schema_mode = 0644;
+	schema->place_holder = 100;
 
 	dentry = simplefs_create_file(&stats_fs, &stats_fs_fs_type,
-				      ".schema", schema_mode,
-					  src->source_dentry, schema_inode, &inode);
+				      ".schema", 0644,
+					  src->source_dentry, schema, &inode);
 	if (IS_ERR(dentry))
 		return dentry;
 

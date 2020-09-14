@@ -104,8 +104,12 @@ const struct file_operations stats_fs_attr_ops = {
 };
 
 const struct file_operations stats_fs_schema_ops = {
-	.open = simple_attr_open,
-	.read = simple_read_from_buffer,
+	.owner = THIS_MODULE,
+	.open = stats_fs_attr_data_open,
+	.release = stats_fs_attr_release,
+	.read = simple_attr_read,
+	.write = simple_attr_write,
+	.llseek = no_llseek,
 };
 
 /* Called with rwsem held for writing */
@@ -192,9 +196,7 @@ stats_fs_create_files_recursive_locked(struct stats_fs_source *source,
 		source->source_dentry =
 			stats_fs_create_dir(source->name, parent_dentry);
 
-		struct stats_fs_schema *schema;
-		schema->place_holder = 1;
-		source->schema = stats_fs_create_schema(schema, source);
+		source->schema_dentry = stats_fs_create_schema(source);
 	}
 
 	stats_fs_create_files_locked(source);

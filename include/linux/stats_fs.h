@@ -38,7 +38,7 @@ enum stat_aggr {
 
 struct stats_fs_schema {
 	int place_holder;
-}
+};
 
 struct stats_fs_value {
 	/* Name of the stat */
@@ -73,6 +73,8 @@ struct stats_fs_source {
 	struct rw_semaphore rwsem;
 
 	struct dentry *source_dentry;
+
+	struct dentry *schema_dentry;
 };
 
 #if defined(CONFIG_STATS_FS)
