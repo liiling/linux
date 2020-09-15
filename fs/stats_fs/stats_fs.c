@@ -34,6 +34,14 @@ static int stats_fs_attr_get(void *data, u64 *val)
 	return r;
 }
 
+static int stats_fs_schema_get(void *data, u64 *val)
+{
+	struct stats_fs_schema *schema =
+		(struct stats_fs_schema *)data;
+	return schema->place_holder;
+
+}
+
 static int stats_fs_attr_clear(void *data, u64 val)
 {
 	int r = -EFAULT;
@@ -50,6 +58,18 @@ static int stats_fs_attr_clear(void *data, u64 val)
 int stats_fs_val_get_mode(struct stats_fs_value *val)
 {
 	return val->mode ? val->mode : 0644;
+}
+
+static int stats_fs_schema_data_open(struct inode *inode, struct file *file)
+{
+//	struct stats_fs_schema *schema;
+//	schema = (struct stats_fs_schema *)inode->i_private;
+
+	if (simple_attr_open(inode, file, stats_fs_schema_get, NULL, "%lld\n")) {
+		return -ENOMEM;
+	}
+	return 0;
+
 }
 
 static int stats_fs_attr_data_open(struct inode *inode, struct file *file)
@@ -105,8 +125,8 @@ const struct file_operations stats_fs_attr_ops = {
 
 const struct file_operations stats_fs_schema_ops = {
 	.owner = THIS_MODULE,
-	.open = stats_fs_attr_data_open,
-	.release = stats_fs_attr_release,
+	.open = stats_fs_schema_data_open,
+	.release = simple_attr_release,
 	.read = simple_attr_read,
 	.write = simple_attr_write,
 	.llseek = no_llseek,
