@@ -38,7 +38,8 @@ static int stats_fs_schema_get(void *data, u64 *val)
 {
 	struct stats_fs_schema *schema =
 		(struct stats_fs_schema *)data;
-	return schema->place_holder;
+	*val = schema->place_holder;
+	return 0;
 
 }
 
@@ -65,10 +66,7 @@ static int stats_fs_schema_data_open(struct inode *inode, struct file *file)
 //	struct stats_fs_schema *schema;
 //	schema = (struct stats_fs_schema *)inode->i_private;
 
-	if (simple_attr_open(inode, file, stats_fs_schema_get, NULL, "%lld\n")) {
-		return -ENOMEM;
-	}
-	return 0;
+	return simple_attr_open(inode, file, stats_fs_schema_get, NULL, "%lld\n");
 
 }
 
