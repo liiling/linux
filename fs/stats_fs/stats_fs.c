@@ -34,15 +34,6 @@ static int stats_fs_attr_get(void *data, u64 *val)
 	return r;
 }
 
-static int stats_fs_schema_get(void *data, u64 *val)
-{
-	struct stats_fs_schema *schema =
-		(struct stats_fs_schema *)data;
-	*val = schema->place_holder;
-	return 0;
-
-}
-
 static int stats_fs_attr_clear(void *data, u64 val)
 {
 	int r = -EFAULT;
@@ -61,13 +52,53 @@ int stats_fs_val_get_mode(struct stats_fs_value *val)
 	return val->mode ? val->mode : 0644;
 }
 
-static int stats_fs_schema_data_open(struct inode *inode, struct file *file)
+static int stats_fs_schema_get(void *data, void *val)
 {
-//	struct stats_fs_schema *schema;
-//	schema = (struct stats_fs_schema *)inode->i_private;
+	struct stats_fs_schema *schema = (struct stats_fs_schema *)data;
+	val = schema->str;
 
-	return simple_attr_open(inode, file, stats_fs_schema_get, NULL, "%lld\n");
+	return 0;
+}
 
+static int stats_fs_schema_open(struct inode *inode, struct file *file)
+{
+	struct stats_fs_schema *schema;
+	schema = (struct stats_fs_schema *)inode->i_private;
+	schema->get = stats_fs_schema_get;
+	mutex_init(&schema->mutex);
+
+	file->private_data = schema;
+
+	return nonseekable_open(inode, file);
+}
+
+static ssize_t stats_fs_schema_read(struct file *file, char __user *buf,
+		size_t len, loff_t *ppos)
+{
+	struct stats_fs_schema *schema;
+	char *val;
+	size_t size;
+	ssize_t ret;
+	char place_holder_str[20] = "Place holder\n";
+
+	schema = file->private_data;
+	val = kmalloc(strlen(schema->str), GFP_KERNEL);
+	
+	if (!schema->get)
+		return -EACCES;
+
+	ret = mutex_lock_interruptible(&schema->mutex);
+	if (ret)
+		return ret;
+
+	ret = schema->get(schema, val);
+
+	size = scnprintf(val, sizeof(val) + sizeof(place_holder_str) + 5, "%s: %s\n", place_holder_str, val);
+	ret = simple_read_from_buffer(buf, len, ppos, val, size);
+	
+	mutex_unlock(&schema->mutex);
+	kfree(val);
+	return ret;
 }
 
 static int stats_fs_attr_data_open(struct inode *inode, struct file *file)
@@ -123,10 +154,9 @@ const struct file_operations stats_fs_attr_ops = {
 
 const struct file_operations stats_fs_schema_ops = {
 	.owner = THIS_MODULE,
-	.open = stats_fs_schema_data_open,
+	.open = stats_fs_schema_open,
 	.release = simple_attr_release,
-	.read = simple_attr_read,
-	.write = simple_attr_write,
+	.read = stats_fs_schema_read,
 	.llseek = no_llseek,
 };
 

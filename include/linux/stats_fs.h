@@ -37,7 +37,11 @@ enum stat_aggr {
 };
 
 struct stats_fs_schema {
-	int place_holder;
+	/*content of the schema file*/
+	char *str;
+	int (*get)(void *, void *);
+
+	struct mutex mutex;
 };
 
 struct stats_fs_value {
