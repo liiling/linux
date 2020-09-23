@@ -36,14 +36,6 @@ enum stat_aggr {
 	STATS_FS_AVG,
 };
 
-struct stats_fs_schema {
-	/*content of the schema file*/
-	char *str;
-	int (*get)(void *, void *);
-
-	struct mutex mutex;
-};
-
 struct stats_fs_value {
 	/* Name of the stat */
 	char *name;

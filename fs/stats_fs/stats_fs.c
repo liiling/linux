@@ -52,20 +52,23 @@ int stats_fs_val_get_mode(struct stats_fs_value *val)
 	return val->mode ? val->mode : 0644;
 }
 
-static int stats_fs_schema_get(void *data, void *val)
-{
-	struct stats_fs_schema *schema = (struct stats_fs_schema *)data;
-	val = schema->str;
-
-	return 0;
-}
-
 static int stats_fs_schema_open(struct inode *inode, struct file *file)
 {
 	struct stats_fs_schema *schema;
+	int str_size;
+	char *place_holder = "place holder";
+	char *schema_buf = kzalloc(5, GFP_KERNEL);
+
+	str_size = scnprintf(schema_buf, sizeof(schema_buf), "%s\n", place_holder);
+	if (str_size > sizeof(schema_buf)) {
+		schema_buf = kzalloc(str_size, GFP_KERNEL);
+		str_size = scnprintf(schema_buf, sizeof(schema_buf), "%s\n", place_holder);
+	}
+
 	schema = (struct stats_fs_schema *)inode->i_private;
-	schema->get = stats_fs_schema_get;
-	mutex_init(&schema->mutex);
+
+	schema->str = schema_buf;
+	schema->str_size = str_size;
 
 	file->private_data = schema;
 
@@ -76,29 +79,18 @@ static ssize_t stats_fs_schema_read(struct file *file, char __user *buf,
 		size_t len, loff_t *ppos)
 {
 	struct stats_fs_schema *schema;
-	char *val;
-	size_t size;
-	ssize_t ret;
-	char place_holder_str[20] = "Place holder\n";
-
-	schema = file->private_data;
-	val = kmalloc(strlen(schema->str), GFP_KERNEL);
+	schema = (struct stats_fs_schema *)file->private_data;
 	
-	if (!schema->get)
-		return -EACCES;
+	return simple_read_from_buffer(buf, len, ppos, schema->str, schema->str_size);
+}
 
-	ret = mutex_lock_interruptible(&schema->mutex);
-	if (ret)
-		return ret;
-
-	ret = schema->get(schema, val);
-
-	size = scnprintf(val, sizeof(val) + sizeof(place_holder_str) + 5, "%s: %s\n", place_holder_str, val);
-	ret = simple_read_from_buffer(buf, len, ppos, val, size);
-	
-	mutex_unlock(&schema->mutex);
-	kfree(val);
-	return ret;
+static int stats_fs_schema_release(struct inode *inode, struct file *file)
+{
+	struct stats_fs_schema *schema;
+	schema = (struct stats_fs_schema *)file->private_data;
+	kfree(schema);
+	kfree(file->private_data);
+	return 0;
 }
 
 static int stats_fs_attr_data_open(struct inode *inode, struct file *file)
@@ -155,7 +147,7 @@ const struct file_operations stats_fs_attr_ops = {
 const struct file_operations stats_fs_schema_ops = {
 	.owner = THIS_MODULE,
 	.open = stats_fs_schema_open,
-	.release = simple_attr_release,
+	.release = stats_fs_schema_release,
 	.read = stats_fs_schema_read,
 	.llseek = no_llseek,
 };

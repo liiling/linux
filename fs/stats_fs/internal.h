@@ -20,6 +20,12 @@ struct stats_fs_data_inode {
 	struct stats_fs_value *val;
 };
 
+struct stats_fs_schema {
+	struct stats_fs_source *src;
+	char *str;
+	int str_size;
+};
+
 extern const struct file_operations stats_fs_attr_ops;
 extern const struct file_operations stats_fs_schema_ops;
 
