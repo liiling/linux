@@ -59,15 +59,23 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	char *place_holder = "place holder";
 	char *schema_buf;
 
+	printk(KERN_ERR "schema_open...");
+
 	str_size = snprintf(NULL, 0, "%s\n", place_holder);
 
+	printk(KERN_ERR "str_size: %d", str_size);
 	schema_buf = kzalloc(str_size, GFP_KERNEL);
 	str_size = scnprintf(schema_buf, str_size, "%s\n", place_holder);
+
+	printk(KERN_ERR "sizeof schema_buf: %d", sizeof(schema_buf));
+	printk(KERN_ERR "str_size: %d", str_size);
 
 	schema = (struct stats_fs_schema *)inode->i_private;
 
 	schema->str = schema_buf;
 	schema->str_size = str_size;
+
+	printk(KERN_ERR "schema->str: %s, str_size -> %d", schema->str, schema->str_size);
 
 	file->private_data = schema;
 
@@ -81,16 +89,25 @@ static ssize_t stats_fs_schema_read(struct file *file, char __user *buf,
 	ssize_t ret;
 	schema = (struct stats_fs_schema *)file->private_data;
 	
+	printk(KERN_ERR "schema->str: %s", schema->str);
+	printk(KERN_ERR "schema->str_size: %d", schema->str_size);
+
 	ret = simple_read_from_buffer(buf, len, ppos, schema->str, schema->str_size);
-	kfree(schema->str);
+
+	printk(KERN_ERR "ret: %d", ret);
+
 	return ret;
 }
 
 static int stats_fs_schema_release(struct inode *inode, struct file *file)
 {
+	printk(KERN_ERR "release...");
 	struct stats_fs_schema *schema;
 	schema = (struct stats_fs_schema *)file->private_data;
-	kfree(schema);
+
+	kfree(schema->str);
+	printk(KERN_ERR "schema released");
+
 	return 0;
 }
 
