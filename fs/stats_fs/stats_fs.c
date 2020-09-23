@@ -55,15 +55,14 @@ int stats_fs_val_get_mode(struct stats_fs_value *val)
 static int stats_fs_schema_open(struct inode *inode, struct file *file)
 {
 	struct stats_fs_schema *schema;
-	int str_size;
+	size_t str_size;
 	char *place_holder = "place holder";
 	char *schema_buf = kzalloc(5, GFP_KERNEL);
 
-	str_size = scnprintf(schema_buf, sizeof(schema_buf), "%s\n", place_holder);
-	if (str_size > sizeof(schema_buf)) {
-		schema_buf = kzalloc(str_size, GFP_KERNEL);
-		str_size = scnprintf(schema_buf, sizeof(schema_buf), "%s\n", place_holder);
-	}
+	str_size = snprintf(NULL, 0, "%s\n", place_holder);
+
+	schema_buf = kzalloc(str_size, GFP_KERNEL);
+	str_size = scnprintf(schema_buf, str_size, "%s\n", place_holder);
 
 	schema = (struct stats_fs_schema *)inode->i_private;
 

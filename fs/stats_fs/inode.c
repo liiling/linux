@@ -265,7 +265,7 @@ struct dentry *stats_fs_create_schema( struct stats_fs_source *src) {
 		return ERR_PTR(-ENOMEM);
 	}
 
-	schema->src = src;
+//	schema->src = src;
 	dentry = simplefs_create_file(&stats_fs, &stats_fs_fs_type,
 				      ".schema", 0644,
 					  src->source_dentry, schema, &inode);
