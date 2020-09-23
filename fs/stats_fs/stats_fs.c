@@ -57,7 +57,7 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	struct stats_fs_schema *schema;
 	size_t str_size;
 	char *place_holder = "place holder";
-	char *schema_buf = kzalloc(5, GFP_KERNEL);
+	char *schema_buf;
 
 	str_size = snprintf(NULL, 0, "%s\n", place_holder);
 
@@ -78,9 +78,12 @@ static ssize_t stats_fs_schema_read(struct file *file, char __user *buf,
 		size_t len, loff_t *ppos)
 {
 	struct stats_fs_schema *schema;
+	ssize_t ret;
 	schema = (struct stats_fs_schema *)file->private_data;
 	
-	return simple_read_from_buffer(buf, len, ppos, schema->str, schema->str_size);
+	ret = simple_read_from_buffer(buf, len, ppos, schema->str, schema->str_size);
+	kfree(schema->str);
+	return ret;
 }
 
 static int stats_fs_schema_release(struct inode *inode, struct file *file)
@@ -88,7 +91,6 @@ static int stats_fs_schema_release(struct inode *inode, struct file *file)
 	struct stats_fs_schema *schema;
 	schema = (struct stats_fs_schema *)file->private_data;
 	kfree(schema);
-	kfree(file->private_data);
 	return 0;
 }
 
