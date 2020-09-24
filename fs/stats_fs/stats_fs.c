@@ -52,25 +52,58 @@ int stats_fs_val_get_mode(struct stats_fs_value *val)
 	return val->mode ? val->mode : 0644;
 }
 
+static void stats_fs_schema_buf_resize(char *schema_buf, size_t str_size) {
+	if (str_size > sizeof(schema_buf))
+		schema_buf = kzalloc(sizeof(schema_buf)*2, GFP_KERNEL);
+}
+
 static int stats_fs_schema_open(struct inode *inode, struct file *file)
 {
 	struct stats_fs_schema *schema;
+	struct stats_fs_value_source *src_entry;
+	struct stats_fs_value *value_entry;
+	struct stats_fs_source *src;
 	size_t str_size;
-	char *place_holder = "place holder";
 	char *schema_buf;
+	char *source_fmt = "Source: %s\n";
+	char *value_fmt = "\t- value: %s\n";
 
 	printk(KERN_ERR "schema_open...");
-
-	str_size = snprintf(NULL, 0, "%s\n", place_holder);
-
-	printk(KERN_ERR "str_size: %ld", str_size);
-	schema_buf = kzalloc(str_size, GFP_KERNEL);
-	str_size = scnprintf(schema_buf, str_size, "%s\n", place_holder);
-
-	printk(KERN_ERR "sizeof schema_buf: %ld", sizeof(schema_buf));
-	printk(KERN_ERR "str_size: %ld", str_size);
-
+	schema_buf = kzalloc(1024, GFP_KERNEL);
 	schema = (struct stats_fs_schema *)inode->i_private;
+	src = schema->src;
+
+	printk(KERN_ERR "Source name = %s", src->name);
+	printk(KERN_ERR "Before resizing...");
+	printk(KERN_ERR "str_size = %ld", str_size);
+	printk(KERN_ERR "sizeof(schema_buf) = %ld", sizeof(schema_buf));
+
+	str_size += snprintf(NULL, 0, source_fmt, src->name);
+	stats_fs_schema_buf_resize(schema_buf, str_size);		
+	scnprintf(schema_buf, str_size, source_fmt, src->name);
+
+	printk(KERN_ERR "After resizing...");
+	printk(KERN_ERR "str_size = %ld", str_size);
+	printk(KERN_ERR "sizeof(schema_buf) = %ld", sizeof(schema_buf));
+
+	list_for_each_entry(src_entry, &src->values_head, list_element) {
+		for (value_entry = src_entry->values; value_entry->name; value_entry++) {
+			printk(KERN_ERR "==============================\n");
+			printk(KERN_ERR "Value name = %s", value_entry->name);
+			printk(KERN_ERR "Before resizing...");
+			printk(KERN_ERR "str_size = %ld", str_size);
+			printk(KERN_ERR "sizeof(schema_buf) = %ld", sizeof(schema_buf));
+
+			str_size += snprintf(NULL, 0, value_fmt, value_entry->name);
+			stats_fs_schema_buf_resize(schema_buf, str_size);
+			scnprintf(schema_buf, str_size, source_fmt, value_entry->name);
+
+			printk(KERN_ERR "After resizing...");
+			printk(KERN_ERR "str_size = %ld", str_size);
+			printk(KERN_ERR "sizeof(schema_buf) = %ld", sizeof(schema_buf));
+		}
+	}
+
 
 	schema->str = schema_buf;
 	schema->str_size = str_size;

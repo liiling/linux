@@ -21,7 +21,7 @@ struct stats_fs_data_inode {
 };
 
 struct stats_fs_schema {
-//	struct stats_fs_source *src;
+	struct stats_fs_source *src;
 	char *str;
 	size_t str_size;
 };
