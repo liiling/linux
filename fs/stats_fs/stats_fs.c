@@ -60,9 +60,9 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	struct stats_fs_source *src;
 	char *schema_buf;
 	char *source_fmt = "Source: %s\n";
-	char *value_fmt = "\t- value: name - %s, type - %d, aggrkind - %d\n";
+	char *value_fmt = "METRIC %s\nFLAG %s\nTYPE %s\nDESC %s\n";
 	size_t off = 0;
-	size_t buf_size = 1024;
+	size_t buf_size = 4096;
 
 	printk(KERN_ERR "schema_open...");
 	schema_buf = kzalloc(buf_size, GFP_KERNEL);
@@ -77,10 +77,10 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 		for (value_entry = src_entry->values; value_entry->name; value_entry++) {
 
 			off += scnprintf(schema_buf + off, buf_size - off, value_fmt, 
-					value_entry->name, value_entry->type, value_entry->aggr_kind);
+					value_entry->name, stat_flag_names[value_entry->flag], "int", value_entry->desc);
 
 			printk(KERN_ERR "==============================\n");
-			printk(KERN_ERR "Value name = %s, type = %d, aggr_kind = %d", value_entry->name, value_entry->type, value_entry->aggr_kind);
+			printk(KERN_ERR "\tvalue name:%s, flag:%s, type:%s, desc:%s", value_entry->name, stat_flag_names[value_entry->flag], "int", value_entry->desc);
 			printk(KERN_ERR "str_size = %ld", off);
 		}
 	}

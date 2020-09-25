@@ -36,9 +36,22 @@ enum stat_aggr {
 	STATS_FS_AVG,
 };
 
+enum stat_flag {
+	STATS_FS_CUMULATIVE = 0,
+	STATS_FS_GAUGE = 1,
+};
+
+static const char* const stat_flag_names[] = {
+	"CUMULATIVE",
+	"GAUGE",
+};
+
 struct stats_fs_value {
 	/* Name of the stat */
 	char *name;
+
+	/* Description of the stat */
+	char *desc;
 
 	/* Offset from base address to field containing the value */
 	int offset;
@@ -49,8 +62,12 @@ struct stats_fs_value {
 	/* Aggregate type: MIN, MAX, SUM,... */
 	enum stat_aggr aggr_kind;
 
+	/* Flag of the stat: CUMULATIVE or GAUGE*/
+	enum stat_flag flag;
+
 	/* File mode */
 	uint16_t mode;
+
 };
 
 struct stats_fs_source {
