@@ -52,6 +52,81 @@ int stats_fs_val_get_mode(struct stats_fs_value *val)
 	return val->mode ? val->mode : 0644;
 }
 
+static int stats_fs_schema_open(struct inode *inode, struct file *file)
+{
+	struct stats_fs_schema *schema;
+	struct stats_fs_value_source *src_entry;
+	struct stats_fs_value *value_entry;
+	struct stats_fs_source *src;
+	char *schema_buf;
+	char *source_fmt = "Source: %s\n";
+	char *value_fmt = "\t- value: name - %s, type - %d, aggrkind - %d\n";
+	size_t off = 0;
+	size_t buf_size = 1024;
+
+	printk(KERN_ERR "schema_open...");
+	schema_buf = kzalloc(buf_size, GFP_KERNEL);
+	schema = (struct stats_fs_schema *)inode->i_private;
+	src = schema->src;
+
+	printk(KERN_ERR "Source name = %s", src->name);
+	off += scnprintf(schema_buf + off, buf_size - off, source_fmt, src->name);
+	printk(KERN_ERR "str_size = %ld", off);
+
+	list_for_each_entry(src_entry, &src->values_head, list_element) {
+		for (value_entry = src_entry->values; value_entry->name; value_entry++) {
+
+			off += scnprintf(schema_buf + off, buf_size - off, value_fmt, 
+					value_entry->name, value_entry->type, value_entry->aggr_kind);
+
+			printk(KERN_ERR "==============================\n");
+			printk(KERN_ERR "Value name = %s, type = %d, aggr_kind = %d", value_entry->name, value_entry->type, value_entry->aggr_kind);
+			printk(KERN_ERR "str_size = %ld", off);
+		}
+	}
+
+
+	schema->str = schema_buf;
+	schema->str_size = off;
+
+	printk(KERN_ERR "schema->str: %s, str_size -> %ld", schema->str, schema->str_size);
+
+	file->private_data = schema;
+
+	return nonseekable_open(inode, file);
+}
+
+static ssize_t stats_fs_schema_read(struct file *file, char __user *buf,
+		size_t len, loff_t *ppos)
+{
+	struct stats_fs_schema *schema;
+	ssize_t ret;
+	schema = (struct stats_fs_schema *)file->private_data;
+	
+	printk(KERN_ERR "schema->str: %s", schema->str);
+	printk(KERN_ERR "schema->str_size: %ld", schema->str_size);
+
+	ret = simple_read_from_buffer(buf, len, ppos, schema->str, schema->str_size);
+
+	printk(KERN_ERR "ret: %ld", ret);
+
+	return ret;
+}
+
+static int stats_fs_schema_release(struct inode *inode, struct file *file)
+{
+
+	struct stats_fs_schema *schema;
+
+	printk(KERN_ERR "release...");
+	schema = (struct stats_fs_schema *)file->private_data;
+
+	kfree(schema->str);
+	printk(KERN_ERR "schema released");
+
+	return 0;
+}
+
 static int stats_fs_attr_data_open(struct inode *inode, struct file *file)
 {
 	struct stats_fs_data_inode *val_inode;
@@ -94,12 +169,20 @@ static int stats_fs_attr_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-const struct file_operations stats_fs_ops = {
+const struct file_operations stats_fs_attr_ops = {
 	.owner = THIS_MODULE,
 	.open = stats_fs_attr_data_open,
 	.release = stats_fs_attr_release,
 	.read = simple_attr_read,
 	.write = simple_attr_write,
+	.llseek = no_llseek,
+};
+
+const struct file_operations stats_fs_schema_ops = {
+	.owner = THIS_MODULE,
+	.open = stats_fs_schema_open,
+	.release = stats_fs_schema_release,
+	.read = stats_fs_schema_read,
 	.llseek = no_llseek,
 };
 
@@ -186,6 +269,8 @@ stats_fs_create_files_recursive_locked(struct stats_fs_source *source,
 	if (!source->source_dentry) {
 		source->source_dentry =
 			stats_fs_create_dir(source->name, parent_dentry);
+
+		source->schema_dentry = stats_fs_create_schema(source);
 	}
 
 	stats_fs_create_files_locked(source);

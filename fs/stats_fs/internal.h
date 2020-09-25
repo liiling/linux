@@ -20,10 +20,19 @@ struct stats_fs_data_inode {
 	struct stats_fs_value *val;
 };
 
-extern const struct file_operations stats_fs_ops;
+struct stats_fs_schema {
+	struct stats_fs_source *src;
+	char *str;
+	size_t str_size;
+};
+
+extern const struct file_operations stats_fs_attr_ops;
+extern const struct file_operations stats_fs_schema_ops;
 
 struct dentry *stats_fs_create_file(struct stats_fs_value *val,
 				   struct stats_fs_source *src);
+
+struct dentry *stats_fs_create_schema(struct stats_fs_source *src);
 
 struct dentry *stats_fs_create_dir(const char *name, struct dentry *parent);
 

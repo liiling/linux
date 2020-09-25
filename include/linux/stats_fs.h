@@ -69,6 +69,8 @@ struct stats_fs_source {
 	struct rw_semaphore rwsem;
 
 	struct dentry *source_dentry;
+
+	struct dentry *schema_dentry;
 };
 
 #if defined(CONFIG_STATS_FS)
