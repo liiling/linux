@@ -4323,7 +4323,7 @@ static void kvm_uevent_notify_change(unsigned int type, struct kvm *kvm)
 
 static void kvm_init_stats_fs(void)
 {
-	kvm_stats_fs_dir = stats_fs_source_create("kvm_%d", "subsystem_%s", 123, "abc");
+	kvm_stats_fs_dir = stats_fs_source_create("kvm", "subsystem");
 	/* symlink to debugfs */
 	debugfs_create_symlink("kvm", NULL, "/sys/kernel/stats_fs/kvm");
 	stats_fs_source_register(kvm_stats_fs_dir);

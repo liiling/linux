@@ -26,6 +26,9 @@ struct stats_fs_schema {
 	size_t str_size;
 };
 
+static const char *schema_source_fmt = "LABEL\n%s\n%s\n\n";
+static const char *schema_value_fmt = "METRIC %s\nFLAG %s\nTYPE %s\nDESC %s\n\n";
+
 extern const struct file_operations stats_fs_attr_ops;
 extern const struct file_operations stats_fs_schema_ops;
 

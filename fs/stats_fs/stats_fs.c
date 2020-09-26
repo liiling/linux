@@ -59,21 +59,19 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	struct stats_fs_value *value_entry;
 	struct stats_fs_source *src;
 	char *schema_buf;
-	char *source_fmt = "LABEL\n%s\n%s\n\n"
-	char *value_fmt = "METRIC %s\nFLAG %s\nTYPE %s\nDESC %s\n\n";
 	size_t off = 0;
 	size_t buf_size = 4096;
 
 	schema_buf = kzalloc(buf_size, GFP_KERNEL);
 	schema = (struct stats_fs_schema *)inode->i_private;
 	src = schema->src;
-	off += scnprintf(schema_buf + off, buf_size - off, source_fmt, src->name, src->label_key);
+	off += scnprintf(schema_buf + off, buf_size - off, schema_source_fmt, src->name, src->label_key);
 
 	list_for_each_entry(src_entry, &src->values_head, list_element) {
 		for (value_entry = src_entry->values; value_entry->name; value_entry++) {
 
-			off += scnprintf(schema_buf + off, buf_size - off, value_fmt, 
-					value_entry->name, stat_flag_names[value_entry->flag], "int", value_entry->desc);
+			off += scnprintf(schema_buf + off, buf_size - off, schema_value_fmt, 
+					value_entry->name, stat_flag_names[value_entry->flag], "INT", value_entry->desc);
 		}
 	}
 
