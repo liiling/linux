@@ -64,33 +64,21 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	size_t off = 0;
 	size_t buf_size = 4096;
 
-	printk(KERN_ERR "schema_open...");
 	schema_buf = kzalloc(buf_size, GFP_KERNEL);
 	schema = (struct stats_fs_schema *)inode->i_private;
 	src = schema->src;
-
-	printk(KERN_ERR "Source name = %s, label_key = %s", src->name, src->label_key);
 	off += scnprintf(schema_buf + off, buf_size - off, source_fmt, src->name, src->label_key);
-	printk(KERN_ERR "str_size = %ld", off);
 
 	list_for_each_entry(src_entry, &src->values_head, list_element) {
 		for (value_entry = src_entry->values; value_entry->name; value_entry++) {
 
 			off += scnprintf(schema_buf + off, buf_size - off, value_fmt, 
 					value_entry->name, stat_flag_names[value_entry->flag], "int", value_entry->desc);
-
-			printk(KERN_ERR "==============================\n");
-			printk(KERN_ERR "\tvalue name:%s, flag:%s, type:%s, desc:%s", value_entry->name, stat_flag_names[value_entry->flag], "int", value_entry->desc);
-			printk(KERN_ERR "str_size = %ld", off);
 		}
 	}
 
-
 	schema->str = schema_buf;
 	schema->str_size = off;
-
-	printk(KERN_ERR "schema->str: %s, str_size -> %ld", schema->str, schema->str_size);
-
 	file->private_data = schema;
 
 	return nonseekable_open(inode, file);
@@ -100,29 +88,17 @@ static ssize_t stats_fs_schema_read(struct file *file, char __user *buf,
 		size_t len, loff_t *ppos)
 {
 	struct stats_fs_schema *schema;
-	ssize_t ret;
 	schema = (struct stats_fs_schema *)file->private_data;
-	
-	printk(KERN_ERR "schema->str: %s", schema->str);
-	printk(KERN_ERR "schema->str_size: %ld", schema->str_size);
 
-	ret = simple_read_from_buffer(buf, len, ppos, schema->str, schema->str_size);
-
-	printk(KERN_ERR "ret: %ld", ret);
-
-	return ret;
+	return simple_read_from_buffer(buf, len, ppos, schema->str, schema->str_size);
 }
 
 static int stats_fs_schema_release(struct inode *inode, struct file *file)
 {
 
 	struct stats_fs_schema *schema;
-
-	printk(KERN_ERR "release...");
 	schema = (struct stats_fs_schema *)file->private_data;
-
 	kfree(schema->str);
-	printk(KERN_ERR "schema released");
 
 	return 0;
 }
