@@ -213,8 +213,9 @@ static void test_empty_folder(struct kunit *test)
 {
 	struct stats_fs_source *src;
 
-	src = stats_fs_source_create("kvm_%d", 123);
+	src = stats_fs_source_create("kvm_%d", "subsystem_%s", 123, "abc");
 	KUNIT_EXPECT_EQ(test, strcmp(src->name, "kvm_123"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(src->label_key, "subsystem_abc"), 0);
 	KUNIT_EXPECT_EQ(test, get_number_subsources(src), 0);
 	KUNIT_EXPECT_EQ(test, get_number_values(src), 0);
 	KUNIT_EXPECT_EQ(test, get_number_aggregates(src), 0);
@@ -225,8 +226,8 @@ static void test_add_subfolder(struct kunit *test)
 {
 	struct stats_fs_source *src, *sub;
 
-	src = stats_fs_source_create("parent");
-	sub = stats_fs_source_create("child");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub = stats_fs_source_create("child", "child_dir");
 	stats_fs_source_add_subordinate(src, sub);
 	KUNIT_EXPECT_EQ(test, source_has_subsource(src, sub), true);
 	KUNIT_EXPECT_EQ(test, get_number_subsources(src), 1);
@@ -237,7 +238,7 @@ static void test_add_subfolder(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, get_total_number_values(src), 0);
 
 	stats_fs_source_put(sub);
-	sub = stats_fs_source_create("not a child");
+	sub = stats_fs_source_create("not a child", "not_child_dir");
 	KUNIT_EXPECT_EQ(test, source_has_subsource(src, sub), false);
 	KUNIT_EXPECT_EQ(test, get_number_subsources(src), 1);
 
@@ -250,7 +251,7 @@ static void test_add_value(struct kunit *test)
 	struct stats_fs_source *src;
 	int n;
 
-	src = stats_fs_source_create("parent");
+	src = stats_fs_source_create("parent", "parent_dir");
 
 	// add values
 	n = stats_fs_source_add_values(src, test_values, &cont);
@@ -281,8 +282,8 @@ static void test_add_value_in_subfolder(struct kunit *test)
 	struct stats_fs_source *src, *sub, *sub_not;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub = stats_fs_source_create("child");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub = stats_fs_source_create("child", "child_dir");
 
 	// src -> sub
 	stats_fs_source_add_subordinate(src, sub);
@@ -302,7 +303,7 @@ static void test_add_value_in_subfolder(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, get_number_aggregates(sub), 0);
 
 	// different folder
-	sub_not = stats_fs_source_create("not a child");
+	sub_not = stats_fs_source_create("not a child", "not_child_dir");
 
 	// add values
 	n = stats_fs_source_add_values(sub_not, test_values, &cont);
@@ -343,7 +344,7 @@ static void test_search_value(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
+	src = stats_fs_source_create("parent", "parent_dir");
 
 	// add values
 	n = stats_fs_source_add_values(src, test_values, &cont);
@@ -378,8 +379,8 @@ static void test_search_value_in_subfolder(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub = stats_fs_source_create("child");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub = stats_fs_source_create("child", "child_dir");
 
 	// src -> sub
 	stats_fs_source_add_subordinate(src, sub);
@@ -428,7 +429,7 @@ static void test_search_value_in_empty_folder(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("empty folder");
+	src = stats_fs_source_create("empty folder", "parent_dir");
 	KUNIT_EXPECT_EQ(test, get_number_aggregates(src), 0);
 	KUNIT_EXPECT_EQ(test, get_number_subsources(src), 0);
 	KUNIT_EXPECT_EQ(test, get_number_values(src), 0);
@@ -457,7 +458,7 @@ static void test_add_aggregate(struct kunit *test)
 	struct stats_fs_source *src;
 	int n;
 
-	src = stats_fs_source_create("parent");
+	src = stats_fs_source_create("parent", "parent_dir");
 
 	// add aggr to src, no values
 	n = stats_fs_source_add_values(src, test_aggr, NULL);
@@ -486,8 +487,8 @@ static void test_add_aggregate_in_subfolder(struct kunit *test)
 	struct stats_fs_source *src, *sub, *sub_not;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub = stats_fs_source_create("child");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub = stats_fs_source_create("child", "child_dir");
 	// src->sub
 	stats_fs_source_add_subordinate(src, sub);
 
@@ -504,7 +505,7 @@ static void test_add_aggregate_in_subfolder(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, get_number_aggregates(sub), ARR_SIZE(test_aggr));
 
 	// not a child
-	sub_not = stats_fs_source_create("not a child");
+	sub_not = stats_fs_source_create("not a child", "not_child_dir");
 
 	// add aggr to "not a child"
 	n = stats_fs_source_add_values(sub_not, test_aggr, NULL);
@@ -540,7 +541,7 @@ static void test_search_aggregate(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
+	src = stats_fs_source_create("parent", "parent_dir");
 	n = stats_fs_source_add_values(src, test_aggr, NULL);
 	KUNIT_EXPECT_EQ(test, n, 0);
 	n = get_number_aggr_with_base(src, NULL);
@@ -571,8 +572,8 @@ static void test_search_aggregate_in_subfolder(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub = stats_fs_source_create("child");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub = stats_fs_source_create("child", "child_dir");
 
 	stats_fs_source_add_subordinate(src, sub);
 
@@ -622,7 +623,7 @@ void test_search_same(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
+	src = stats_fs_source_create("parent", "parent_dir");
 	n = stats_fs_source_add_values(src, test_same_name, &cont);
 	KUNIT_EXPECT_EQ(test, n, 0);
 	n = get_number_values_with_base(src, &cont);
@@ -650,7 +651,7 @@ static void test_add_mixed(struct kunit *test)
 	struct stats_fs_source *src;
 	int n;
 
-	src = stats_fs_source_create("parent");
+	src = stats_fs_source_create("parent", "parent_dir");
 
 	n = stats_fs_source_add_values(src, test_aggr, NULL);
 	KUNIT_EXPECT_EQ(test, n, 0);
@@ -681,8 +682,8 @@ static void test_search_mixed(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub = stats_fs_source_create("child");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub = stats_fs_source_create("child", "child_dir");
 	stats_fs_source_add_subordinate(src, sub);
 
 	// src has the aggregates, sub the values. Just search
@@ -736,9 +737,9 @@ static void test_all_aggregations_agg_val_val(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub1 = stats_fs_source_create("child1");
-	sub2 = stats_fs_source_create("child2");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub1 = stats_fs_source_create("child1", "child_dir");
+	sub2 = stats_fs_source_create("child2", "child_dir");
 	stats_fs_source_add_subordinate(src, sub1);
 	stats_fs_source_add_subordinate(src, sub2);
 
@@ -792,9 +793,9 @@ static void test_all_aggregations_val_agg_val(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub1 = stats_fs_source_create("child1");
-	sub2 = stats_fs_source_create("child2");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub1 = stats_fs_source_create("child1", "child_dir");
+	sub2 = stats_fs_source_create("child2", "child_dir");
 	stats_fs_source_add_subordinate(src, sub1);
 	stats_fs_source_add_subordinate(src, sub2);
 
@@ -873,9 +874,9 @@ static void test_all_aggregations_agg_val_val_sub(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub1 = stats_fs_source_create("child1");
-	sub11 = stats_fs_source_create("child11");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub1 = stats_fs_source_create("child1", "child_dir");
+	sub11 = stats_fs_source_create("child11", "child_dir");
 	stats_fs_source_add_subordinate(src, sub1);
 	stats_fs_source_add_subordinate(sub1, sub11); // changes here!
 
@@ -941,9 +942,9 @@ static void test_all_aggregations_agg_no_val_sub(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub1 = stats_fs_source_create("child1");
-	sub11 = stats_fs_source_create("child11");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub1 = stats_fs_source_create("child1", "child_dir");
+	sub11 = stats_fs_source_create("child11", "child_dir");
 	stats_fs_source_add_subordinate(src, sub1);
 	stats_fs_source_add_subordinate(sub1, sub11);
 
@@ -995,10 +996,10 @@ static void test_all_aggregations_agg_agg_val_sub(struct kunit *test)
 	uint64_t ret;
 	int n;
 
-	src = stats_fs_source_create("parent");
-	sub1 = stats_fs_source_create("child1");
-	sub11 = stats_fs_source_create("child11");
-	sub12 = stats_fs_source_create("child12");
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub1 = stats_fs_source_create("child1", "child_dir");
+	sub11 = stats_fs_source_create("child11", "grandchild_dir");
+	sub12 = stats_fs_source_create("child12", "grandchild_dir");
 	stats_fs_source_add_subordinate(src, sub1);
 	stats_fs_source_add_subordinate(sub1, sub11);
 	stats_fs_source_add_subordinate(sub1, sub12);

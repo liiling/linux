@@ -73,6 +73,10 @@ struct stats_fs_value {
 struct stats_fs_source {
 	struct kref refcount;
 
+	/* label_key displayed in .schema file*/
+	char *label_key;
+
+	/* name of the stats_fs directory; label_value displayed in .schema file*/
 	char *name;
 
 	/* list of source stats_fs_value_source*/
@@ -94,7 +98,7 @@ struct stats_fs_source {
 
 /**
  * stats_fs_source_create - create a stats_fs_source
- * Creates a stats_fs_source with the given name. This
+ * Creates a stats_fs_source with the given name and label_key. This
  * does not mean it will be backed by the filesystem yet, it will only
  * be visible to the user once one of its parents (or itself) are
  * registered in stats_fs.
@@ -104,7 +108,7 @@ struct stats_fs_source {
  * function when the file is to be removed.  If an error occurs,
  * ERR_PTR(-ERROR) will be returned.
  */
-struct stats_fs_source *stats_fs_source_create(const char *fmt, ...);
+struct stats_fs_source *stats_fs_source_create(const char *name_fmt, const char *label_key_fmt, ...);
 
 /**
  * stats_fs_source_register - register a source in the stats_fs filesystem

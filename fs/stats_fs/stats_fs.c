@@ -59,8 +59,8 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	struct stats_fs_value *value_entry;
 	struct stats_fs_source *src;
 	char *schema_buf;
-	char *source_fmt = "Source: %s\n";
-	char *value_fmt = "METRIC %s\nFLAG %s\nTYPE %s\nDESC %s\n";
+	char *source_fmt = "LABEL\n%s\n%s\n\n"
+	char *value_fmt = "METRIC %s\nFLAG %s\nTYPE %s\nDESC %s\n\n";
 	size_t off = 0;
 	size_t buf_size = 4096;
 
@@ -69,8 +69,8 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	schema = (struct stats_fs_schema *)inode->i_private;
 	src = schema->src;
 
-	printk(KERN_ERR "Source name = %s", src->name);
-	off += scnprintf(schema_buf + off, buf_size - off, source_fmt, src->name);
+	printk(KERN_ERR "Source name = %s, label_key = %s", src->name, src->label_key);
+	off += scnprintf(schema_buf + off, buf_size - off, source_fmt, src->name, src->label_key);
 	printk(KERN_ERR "str_size = %ld", off);
 
 	list_for_each_entry(src_entry, &src->values_head, list_element) {
@@ -815,6 +815,7 @@ static void stats_fs_source_destroy(struct kref *kref_source)
 
 	up_write(&source->rwsem);
 	kfree(source->name);
+	kfree(source->label_key);
 	kfree(source);
 }
 
@@ -825,23 +826,25 @@ void stats_fs_source_put(struct stats_fs_source *source)
 }
 EXPORT_SYMBOL_GPL(stats_fs_source_put);
 
-struct stats_fs_source *stats_fs_source_create(const char *fmt, ...)
+struct stats_fs_source *stats_fs_source_create(const char *name_fmt, const char *label_key_fmt, ...)
 {
 	va_list ap;
-	char buf[100];
+	size_t buf_size = 200;
+	char buf[buf_size];
 	struct stats_fs_source *ret;
-	int char_needed;
-
-	va_start(ap, fmt);
-	char_needed = vsnprintf(buf, 100, fmt, ap);
-	va_end(ap);
 
 	ret = kzalloc(sizeof(struct stats_fs_source), GFP_KERNEL);
 	if (!ret)
 		return ERR_PTR(-ENOMEM);
 
+	va_start(ap, label_key_fmt);
+	vsnprintf(buf, buf_size, name_fmt, ap);
 	ret->name = kstrdup(buf, GFP_KERNEL);
-	if (!ret->name) {
+	vsnprintf(buf, buf_size, label_key_fmt, ap);
+	ret->label_key = kstrdup(buf, GFP_KERNEL);
+	va_end(ap);
+
+	if (!ret->name || !ret->label_key) {
 		kfree(ret);
 		return ERR_PTR(-ENOMEM);
 	}
