@@ -17,6 +17,10 @@ struct stats_fs_aggregate_value {
 	uint32_t count, count_zero;
 };
 
+const char *schema_label_const = "LABEL\n";
+const char *schema_label_fmt = "%s %s\n";
+const char *schema_value_fmt = "METRIC\nNAME %s\nFLAG %s\nTYPE %s\nDESC %s\n\n";
+
 static void stats_fs_source_remove_files(struct stats_fs_source *src);
 
 static int is_val_signed(struct stats_fs_value *val)
@@ -55,6 +59,7 @@ int stats_fs_val_get_mode(struct stats_fs_value *val)
 static int stats_fs_schema_open(struct inode *inode, struct file *file)
 {
 	struct stats_fs_schema *schema;
+	struct stats_fs_schema_label *label;
 	struct stats_fs_value_source *src_entry;
 	struct stats_fs_value *value_entry;
 	struct stats_fs_source *src;
@@ -64,12 +69,19 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 
 	schema_buf = kzalloc(buf_size, GFP_KERNEL);
 	schema = (struct stats_fs_schema *)inode->i_private;
+
+	if (!kref_get_unless_zero(&schema->src->refcount))
+		return -ENOENT;
+
 	src = schema->src;
-	off += scnprintf(schema_buf + off, buf_size - off, schema_source_fmt, src->name, src->label_key);
+	off += scnprintf(schema_buf + off, buf_size - off, schema_label_const);
+	list_for_each_entry(label, &src->labels_head, label_element) {
+		off += scnprintf(schema_buf + off, buf_size - off, schema_label_fmt, label->key, label->value);
+	}
+	off += scnprintf(schema_buf + off, buf_size - off, "\n");
 
 	list_for_each_entry(src_entry, &src->values_head, list_element) {
 		for (value_entry = src_entry->values; value_entry->name; value_entry++) {
-
 			off += scnprintf(schema_buf + off, buf_size - off, schema_value_fmt, 
 					value_entry->name, stat_flag_names[value_entry->flag], "INT", value_entry->desc);
 		}
@@ -322,6 +334,7 @@ void stats_fs_source_add_subordinate(struct stats_fs_source *source,
 
 	stats_fs_source_get(sub);
 	list_add(&sub->list_element, &source->subordinates_head);
+	list_add(&source->labels_head, &sub->labels_head);
 	if (source->source_dentry)
 		stats_fs_create_files_recursive_locked(sub,
 						       source->source_dentry);
@@ -806,10 +819,12 @@ struct stats_fs_source *stats_fs_source_create(const char *name_fmt, const char 
 	size_t buf_size = 200;
 	char buf[buf_size];
 	struct stats_fs_source *ret;
+	struct stats_fs_schema_label *label;
 
 	ret = kzalloc(sizeof(struct stats_fs_source), GFP_KERNEL);
 	if (!ret)
 		return ERR_PTR(-ENOMEM);
+
 
 	va_start(ap, label_key_fmt);
 	vsnprintf(buf, buf_size, name_fmt, ap);
@@ -829,6 +844,13 @@ struct stats_fs_source *stats_fs_source_create(const char *name_fmt, const char 
 	INIT_LIST_HEAD(&ret->values_head);
 	INIT_LIST_HEAD(&ret->subordinates_head);
 	INIT_LIST_HEAD(&ret->list_element);
+
+	// init labels_head struct and populate it with the label of the newly created stats_fs_source
+	INIT_LIST_HEAD(&ret->labels_head);
+	label = kzalloc(sizeof(struct stats_fs_schema_label), GFP_KERNEL);
+	label->key = kstrdup(ret->name, GFP_KERNEL);
+	label->value = kstrdup(ret->label_key, GFP_KERNEL);
+	list_add(&label->label_element, &ret->labels_head);
 
 	return ret;
 }

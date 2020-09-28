@@ -73,11 +73,14 @@ struct stats_fs_value {
 struct stats_fs_source {
 	struct kref refcount;
 
-	/* label_key displayed in .schema file*/
+	/* label_key of the stats_fs directory */
 	char *label_key;
 
-	/* name of the stats_fs directory; label_value displayed in .schema file*/
+	/* name of the stats_fs directory; label_value of the stats_fs directory */
 	char *name;
+
+	/* list of struct stats_fs_schema_label applied to the source */
+	struct list_head labels_head;
 
 	/* list of source stats_fs_value_source*/
 	struct list_head values_head;
