@@ -209,13 +209,24 @@ int get_number_aggr_with_base(struct stats_fs_source *src, void *addr)
 	return counter;
 }
 
+int get_number_labels(struct stats_fs_source *src)
+{
+	struct stats_fs_schema_label *label;
+	int counter = 0;
+
+	list_for_each_entry(label, &src->labels_head, label_element) {
+		counter ++;
+	}
+	return counter;
+}
+
 static void test_empty_folder(struct kunit *test)
 {
 	struct stats_fs_source *src;
 
-	src = stats_fs_source_create("kvm_%d", "subsystem_%s", 123, "abc");
+	src = stats_fs_source_create("kvm_%d", "subsystem_%s", 123, "name");
 	KUNIT_EXPECT_EQ(test, strcmp(src->name, "kvm_123"), 0);
-	KUNIT_EXPECT_EQ(test, strcmp(src->label_key, "subsystem_abc"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(src->label_key, "subsystem_name"), 0);
 	KUNIT_EXPECT_EQ(test, get_number_subsources(src), 0);
 	KUNIT_EXPECT_EQ(test, get_number_values(src), 0);
 	KUNIT_EXPECT_EQ(test, get_number_aggregates(src), 0);
@@ -242,6 +253,49 @@ static void test_add_subfolder(struct kunit *test)
 	KUNIT_EXPECT_EQ(test, source_has_subsource(src, sub), false);
 	KUNIT_EXPECT_EQ(test, get_number_subsources(src), 1);
 
+	stats_fs_source_put(sub);
+	stats_fs_source_put(src);
+}
+
+static void test_labels(struct kunit *test)
+{
+	struct stats_fs_source *src, *sub, *subsub;
+	struct stats_fs_schema_label *label;
+
+	src = stats_fs_source_create("parent", "parent_dir");
+	sub = stats_fs_source_create("child", "child_dir");
+	subsub = stats_fs_source_create("grandchild", "grandchild_dir");
+	stats_fs_source_add_subordinate(src, sub);
+	stats_fs_source_add_subordinate(sub, subsub);
+
+	/* labels of src */
+	KUNIT_EXPECT_EQ(test, get_number_labels(src), 1);
+	label = list_entry(&src->labels_head, struct stats_fs_schema_label, label_element);
+	KUNIT_EXPECT_EQ(test, strcmp(label->key, "parent_dir"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(label->value, "parent"), 0);
+
+	/* labels of sub */
+	KUNIT_EXPECT_EQ(test, get_number_labels(sub), 2);
+	label = list_entry(&sub->labels_head, struct stats_fs_schema_label, label_element);
+	KUNIT_EXPECT_EQ(test, strcmp(label->key, "child_dir"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(label->value, "child"), 0);
+	label = list_next_entry(label, label_element);
+	KUNIT_EXPECT_EQ(test, strcmp(label->key, "parent_dir"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(label->value, "parent"), 0);
+
+	/* labels of subsub */
+	KUNIT_EXPECT_EQ(test, get_number_labels(subsub), 3);
+	label = list_entry(&subsub->labels_head, struct stats_fs_schema_label, label_element);
+	KUNIT_EXPECT_EQ(test, strcmp(label->key, "grandchild_dir"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(label->value, "grandchild"), 0);
+	label = list_next_entry(label, label_element);
+	KUNIT_EXPECT_EQ(test, strcmp(label->key, "child_dir"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(label->value, "child"), 0);
+	label = list_next_entry(label, label_element);
+	KUNIT_EXPECT_EQ(test, strcmp(label->key, "parent_dir"), 0);
+	KUNIT_EXPECT_EQ(test, strcmp(label->value, "parent"), 0);
+
+	stats_fs_source_put(subsub);
 	stats_fs_source_put(sub);
 	stats_fs_source_put(src);
 }
@@ -1061,6 +1115,7 @@ static void test_all_aggregations_agg_agg_val_sub(struct kunit *test)
 static struct kunit_case stats_fs_test_cases[] = {
 	KUNIT_CASE(test_empty_folder),
 	KUNIT_CASE(test_add_subfolder),
+	KUNIT_CASE(test_labels),
 	KUNIT_CASE(test_add_value),
 	KUNIT_CASE(test_add_value_in_subfolder),
 	KUNIT_CASE(test_search_value),
