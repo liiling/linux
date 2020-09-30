@@ -616,7 +616,7 @@ static int kvm_create_vm_stats_fs(struct kvm *kvm, int fd)
 		return 0;
 
 	snprintf(dir_name, sizeof(dir_name), "%d-%d", task_pid_nr(current), fd);
-	kvm->stats_fs_src = stats_fs_source_create(dir_name);
+	kvm->stats_fs_src = stats_fs_source_create(dir_name, "vm");
 	stats_fs_source_add_subordinate(kvm_stats_fs_dir, kvm->stats_fs_src);
 
 	stats_fs_source_add_values(kvm->stats_fs_src, stats_fs_vm_entries, kvm);
@@ -2953,7 +2953,7 @@ static void kvm_create_vcpu_stats_fs(struct kvm_vcpu *vcpu)
 
 	snprintf(dir_name, sizeof(dir_name), "vcpu%d", vcpu->vcpu_id);
 
-	vcpu->stats_fs_src = stats_fs_source_create(dir_name);
+	vcpu->stats_fs_src = stats_fs_source_create(dir_name, "vcpu");
 	stats_fs_source_add_subordinate(vcpu->kvm->stats_fs_src, vcpu->stats_fs_src);
 
 	stats_fs_source_add_values(vcpu->stats_fs_src, stats_fs_vcpu_entries, vcpu);
@@ -4323,7 +4323,7 @@ static void kvm_uevent_notify_change(unsigned int type, struct kvm *kvm)
 
 static void kvm_init_stats_fs(void)
 {
-	kvm_stats_fs_dir = stats_fs_source_create("kvm");
+	kvm_stats_fs_dir = stats_fs_source_create("kvm", "subsystem");
 	/* symlink to debugfs */
 	debugfs_create_symlink("kvm", NULL, "/sys/kernel/stats_fs/kvm");
 	stats_fs_source_register(kvm_stats_fs_dir);

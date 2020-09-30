@@ -8,30 +8,30 @@
 #include <linux/stats_fs.h>
 #include "lapic.h"
 
-#define VCPU_ARCH_STATS_FS(n, s, x, ...)					\
-			{ n, offsetof(struct s, x), .aggr_kind = STATS_FS_SUM,	\
+#define VCPU_ARCH_STATS_FS(n,desc,  s, x, ...)					\
+			{ n, desc, offsetof(struct s, x), .aggr_kind = STATS_FS_SUM, .flag= STATS_FS_CUMULATIVE,	\
 			  ##__VA_ARGS__ }
 
 struct stats_fs_value stats_fs_vcpu_tsc_offset[] = {
-	VCPU_ARCH_STATS_FS("tsc-offset", kvm_vcpu_arch, tsc_offset,
+	VCPU_ARCH_STATS_FS("tsc-offset", "tsc-offset", kvm_vcpu_arch, tsc_offset,
 			   .type = STATS_FS_S64, .mode = 0444),
 	{ NULL }
 };
 
 struct stats_fs_value stats_fs_vcpu_arch_lapic_timer[] = {
-	VCPU_ARCH_STATS_FS("lapic_timer_advance_ns", kvm_timer, timer_advance_ns,
+	VCPU_ARCH_STATS_FS("lapic_timer_advance_ns", "lapic_timer_advance_ns", kvm_timer, timer_advance_ns,
 			   .type = STATS_FS_U64, .mode = 0444),
 	{ NULL }
 };
 
 struct stats_fs_value stats_fs_vcpu_arch_tsc_ratio[] = {
-	VCPU_ARCH_STATS_FS("tsc-scaling-ratio", kvm_vcpu_arch, tsc_scaling_ratio,
+	VCPU_ARCH_STATS_FS("tsc-scaling-ratio", "tsc-scaling-ratio", kvm_vcpu_arch, tsc_scaling_ratio,
 			   .type = STATS_FS_U64, .mode = 0444),
 	{ NULL }
 };
 
 struct stats_fs_value stats_fs_vcpu_arch_tsc_frac[] = {
-	{ "tsc-scaling-ratio-frac-bits", 0, .type = STATS_FS_U64, .mode = 0444 },
+	{ "tsc-scaling-ratio-frac-bits", "tsc-scaling-ratio-frac-bits", 0, .type = STATS_FS_U64, .mode = 0444 },
 	{ NULL } /* base is &kvm_tsc_scaling_ratio_frac_bits */
 };
 

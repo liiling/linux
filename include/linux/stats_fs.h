@@ -36,9 +36,22 @@ enum stat_aggr {
 	STATS_FS_AVG,
 };
 
+enum stat_flag {
+	STATS_FS_CUMULATIVE = 0,
+	STATS_FS_GAUGE = 1,
+};
+
+static const char* const stat_flag_names[] = {
+	"CUMULATIVE",
+	"GAUGE",
+};
+
 struct stats_fs_value {
 	/* Name of the stat */
 	char *name;
+
+	/* Description of the stat */
+	char *desc;
 
 	/* Offset from base address to field containing the value */
 	int offset;
@@ -49,14 +62,25 @@ struct stats_fs_value {
 	/* Aggregate type: MIN, MAX, SUM,... */
 	enum stat_aggr aggr_kind;
 
+	/* Flag of the stat: CUMULATIVE or GAUGE*/
+	enum stat_flag flag;
+
 	/* File mode */
 	uint16_t mode;
+
 };
 
 struct stats_fs_source {
 	struct kref refcount;
 
+	/* label_key of the stats_fs directory */
+	char *label_key;
+
+	/* name of the stats_fs directory; label_value of the stats_fs directory */
 	char *name;
+
+	/* list of struct stats_fs_schema_label applied to the source */
+	struct list_head labels_head;
 
 	/* list of source stats_fs_value_source*/
 	struct list_head values_head;
@@ -77,7 +101,7 @@ struct stats_fs_source {
 
 /**
  * stats_fs_source_create - create a stats_fs_source
- * Creates a stats_fs_source with the given name. This
+ * Creates a stats_fs_source with the given name and label_key. This
  * does not mean it will be backed by the filesystem yet, it will only
  * be visible to the user once one of its parents (or itself) are
  * registered in stats_fs.
@@ -87,7 +111,7 @@ struct stats_fs_source {
  * function when the file is to be removed.  If an error occurs,
  * ERR_PTR(-ERROR) will be returned.
  */
-struct stats_fs_source *stats_fs_source_create(const char *fmt, ...);
+struct stats_fs_source *stats_fs_source_create(const char *name_fmt, const char *label_key_fmt, ...);
 
 /**
  * stats_fs_source_register - register a source in the stats_fs filesystem
