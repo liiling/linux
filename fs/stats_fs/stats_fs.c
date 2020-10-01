@@ -65,7 +65,7 @@ static int stats_fs_schema_open(struct inode *inode, struct file *file)
 	struct stats_fs_source *src;
 	char *schema_buf;
 	size_t off = 0;
-	size_t buf_size = 4096;
+	size_t buf_size = 10240;
 
 	schema_buf = kzalloc(buf_size, GFP_KERNEL);
 	schema = (struct stats_fs_schema *)inode->i_private;
